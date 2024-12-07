@@ -1,0 +1,47 @@
+@import "colors.css";
+@import "minireset.css/minireset.min.css";
+
+html,
+body {
+    background-color: var(--background);
+    color: var(--primary);
+    font-family: var(--font);
+    font-size: 18px;
+    font-weight: 400;
+    scroll-behavior: smooth;
+}
+
+body {
+    padding-top: 80px;
+}
+
+::selection {
+    background: var(--primary-light);
+}
+
+::-moz-selection {
+    background: var(--primary-light);
+}
+
+a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+strong {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+#nprogress .bar {
+    background: var(--secondary) !important;
+}
+
+#nprogress .peg {
+    box-shadow: 0 0 10px var(--secondary), 0 0 5px var(--secondary) !important;
+}
+
+#nprogress .spinner-icon {
+    border-top-color: var(--secondary) !important;
+    border-left-color: var(--secondary) !important;
+}

@@ -1,0 +1,15 @@
+.user {
+    margin-top: 15px;
+}
+
+.user__title {
+    font-size: 36px;
+}
+
+.user__info {
+    font-size: 14px;
+}
+
+.user__about {
+    padding: 30px 0 15px 0;
+}
