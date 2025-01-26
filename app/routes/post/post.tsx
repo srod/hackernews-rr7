@@ -1,6 +1,5 @@
 import { LRUCache } from "lru-cache";
 import { useCallback } from "react";
-import type { LoaderFunction } from "react-router";
 import { useRevalidator } from "react-router";
 import { useVisibilityChange } from "~/hooks/useVisibilityChange";
 import { fetchData } from "~/lib/fetch-data";
@@ -11,66 +10,59 @@ import type { Route } from "./+types/post";
 
 // Create LRU Cache with options
 const postCache = new LRUCache<string, Post>({
-	// Maximum number of items to store in the cache
-	max: 1000,
+    // Maximum number of items to store in the cache
+    max: 1000,
 
-	// How long to live in milliseconds (e.g., 1 minute)
-	ttl: 1000 * 60 * 1,
+    // How long to live in milliseconds (e.g., 1 minute)
+    ttl: 1000 * 60 * 1,
 });
 
 // Helper function to generate cache key
 const getCacheKey = (id: string) => `post-${id}`;
 
 export async function loader({ params }: Route.LoaderArgs) {
-	const id = params.id;
+    const id = params.id;
 
-	if (!id) return null;
+    if (!id) return null;
 
-	// Generate cache key for this request
-	const cacheKey = getCacheKey(id);
+    // Generate cache key for this request
+    const cacheKey = getCacheKey(id);
 
-	// Try to get posts from cache first
-	let post = postCache.get(cacheKey);
+    // Try to get posts from cache first
+    let post = postCache.get(cacheKey);
 
-	// If not in cache, fetch from API and store in cache
-	if (!post) {
-		post = await fetchData<Post>(`item/${id}`);
-		postCache.set(cacheKey, post);
-	}
+    // If not in cache, fetch from API and store in cache
+    if (!post) {
+        post = await fetchData<Post>(`item/${id}`);
+        postCache.set(cacheKey, post);
+    }
 
-	return {
-		id,
-		post,
-	};
+    return {
+        id,
+        post,
+    };
 }
 
-// export const meta: MetaFunction<typeof loader> = ({ data }) => {
-//     return [{ title: `Hacker News: ${data?.post.title}` }];
-// };
-
-// Caches the loader data on the client
-// export const clientLoader = (args: ClientLoaderFunctionArgs) =>
-//     cacheClientLoader(args);
-// clientLoader.hydrate = true;
+export function meta({ data }: Route.MetaArgs) {
+    return [{ title: `Hacker News: ${data?.post.title}` }];
+}
 
 export default function PostRoute({ loaderData }: Route.ComponentProps) {
-	const post = loaderData?.post;
-	const { revalidate } = useRevalidator();
+    const post = loaderData?.post;
+    const { revalidate } = useRevalidator();
 
-	const handleVisibilityChange = useCallback(() => {
-		revalidate();
-	}, [revalidate]);
+    const handleVisibilityChange = useCallback(() => {
+        revalidate();
+    }, [revalidate]);
 
-	useVisibilityChange(handleVisibilityChange);
+    useVisibilityChange(handleVisibilityChange);
 
-	if (!post) {
-		return null;
-	}
+    if (!post) return <div>Loading...</div>;
 
-	return (
-		<>
-			<PostItem post={post} showText={true} />
-			<Comments id={loaderData?.id} kids={post.kids} />
-		</>
-	);
+    return (
+        <>
+            <PostItem post={post} showText={true} />
+            <Comments id={loaderData?.id} kids={post.kids} />
+        </>
+    );
 }

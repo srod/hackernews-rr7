@@ -5,10 +5,10 @@
     --color-grey-light: #17181c;
     --color-black: #000;
     --color-blue-petrol: #1d4851;
-    --primary: #a3a3a3;
+    --primary: #c7c7cc;
     --primary-light: var(--color-grey-light);
     --secondary: var(--color-orange);
-    --background: #111111;
+    --background: #1b1b1f;
     --inline-bg: #1a1a1a;
     --color-orange: #ff6600;
 }

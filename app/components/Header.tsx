@@ -1,5 +1,5 @@
-import { Link, NavLink } from "react-router";
 import { capitalize } from "radash";
+import { Link, NavLink } from "react-router";
 import logo from "../assets/icon.png";
 import styles from "./Header.module.css";
 

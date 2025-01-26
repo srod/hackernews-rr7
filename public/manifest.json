@@ -1,0 +1,14 @@
+{
+    "name": "Hacker News",
+    "short_name": "Hacker News",
+    "description": "Hacker News",
+    "version": "0.0.1",
+    "icons": [],
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#c7c7cc",
+    "theme_color": "#c7c7cc",
+    "launch_handler": {
+        "client_mode": ["focus-existing", "navigate-existing", "auto"]
+    }
+}
