@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { CommentsList } from "~/components/post/Comments";
 import { PostItem } from "~/components/post/Post";
 import { CommentListSkeleton, PostSkeleton } from "~/components/Skeleton";
+import { useOnlineStatus } from "~/hooks/useOnlineStatus";
 import { fetchComments, MAX_TOP_LEVEL } from "~/lib/fetch-comments";
 import { fetchData } from "~/lib/fetch-data";
 import { markPostVisited } from "~/lib/visited-posts";
@@ -44,6 +45,7 @@ export const Route = createFileRoute("/_layout/post/$id")({
 
 function PostComponent() {
     const { post } = Route.useLoaderData();
+    const isOnline = useOnlineStatus();
     const [comments, setComments] = useState<Comment[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
@@ -79,7 +81,7 @@ function PostComponent() {
     }, [post?.kids]);
 
     const loadMore = useCallback(() => {
-        if (loadingMore || !hasMore) return;
+        if (!isOnline || loadingMore || !hasMore) return;
 
         setLoadingMore(true);
         const nextBatch = allKids.slice(
@@ -94,7 +96,7 @@ function PostComponent() {
             })
             .catch(() => {})
             .finally(() => setLoadingMore(false));
-    }, [allKids, loadedCount, loadingMore, hasMore]);
+    }, [isOnline, allKids, loadedCount, loadingMore, hasMore]);
 
     if (!post) return <div>Post not found</div>;
 
@@ -106,7 +108,7 @@ function PostComponent() {
             ) : (
                 <CommentsList
                     comments={comments}
-                    hasMore={hasMore}
+                    hasMore={hasMore && isOnline}
                     loadingMore={loadingMore}
                     onLoadMore={loadMore}
                     op={post.by}

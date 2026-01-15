@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { items } from "~/components/Header";
 import { PostItem } from "~/components/post/Post";
 import { PostListSkeleton } from "~/components/Skeleton";
+import { useOnlineStatus } from "~/hooks/useOnlineStatus";
 import { fetchData } from "~/lib/fetch-data";
 import type { Post, PostTypes } from "~/types/Post";
 
@@ -61,6 +62,7 @@ async function fetchPosts(ids: string[]): Promise<Post[]> {
 function TypeComponent() {
     const { type, storyIds: initialStoryIds } = Route.useLoaderData();
     const router = useRouter();
+    const isOnline = useOnlineStatus();
     const [storyIds, setStoryIds] = useState(initialStoryIds);
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
@@ -73,6 +75,7 @@ function TypeComponent() {
 
     // Refresh function - fetches fresh story IDs and updates first page
     const refresh = useCallback(async () => {
+        if (!isOnline) return;
         // Debounce - don't refresh more than once per 5 seconds
         const now = Date.now();
         if (now - lastRefreshRef.current < 5000) return;
@@ -95,7 +98,7 @@ function TypeComponent() {
 
         // Also invalidate router cache
         router.invalidate();
-    }, [type, page, router]);
+    }, [isOnline, type, page, router]);
 
     // Initial load when type changes
     useEffect(() => {
@@ -139,7 +142,7 @@ function TypeComponent() {
     }, [refresh]);
 
     const loadMore = useCallback(() => {
-        if (loadingMore || !hasMore) return;
+        if (!isOnline || loadingMore || !hasMore) return;
 
         setLoadingMore(true);
         const start = page * POST_PER_PAGE;
@@ -153,7 +156,7 @@ function TypeComponent() {
             })
             .catch(() => {})
             .finally(() => setLoadingMore(false));
-    }, [storyIds, page, loadingMore, hasMore]);
+    }, [isOnline, storyIds, page, loadingMore, hasMore]);
 
     // Intersection Observer for infinite scroll
     useEffect(() => {
@@ -180,7 +183,7 @@ function TypeComponent() {
             {posts.map((post) => (
                 <PostItem key={post.id} post={post} />
             ))}
-            {hasMore && (
+            {hasMore && isOnline && (
                 <div ref={loaderRef}>
                     {loadingMore && <PostListSkeleton count={3} />}
                 </div>

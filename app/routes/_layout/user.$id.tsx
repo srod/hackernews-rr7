@@ -10,6 +10,7 @@ import {
 } from "~/components/Skeleton";
 import { UserItem } from "~/components/user/User";
 import styles from "~/components/user/User.module.css";
+import { useOnlineStatus } from "~/hooks/useOnlineStatus";
 import { fetchData } from "~/lib/fetch-data";
 import type { Comment } from "~/types/Comment";
 import type { Post } from "~/types/Post";
@@ -49,6 +50,7 @@ export const Route = createFileRoute("/_layout/user/$id")({
 
 function UserComponent() {
     const { user } = Route.useLoaderData();
+    const isOnline = useOnlineStatus();
     const [activeTab, setActiveTab] = useState<Tab>("about");
 
     // Submissions state
@@ -72,7 +74,8 @@ function UserComponent() {
     const submitted = user?.submitted ?? [];
 
     const loadSubmissions = useCallback(async () => {
-        if (loadingSubmissionsRef.current || submissionsDone) return;
+        if (!isOnline || loadingSubmissionsRef.current || submissionsDone)
+            return;
         loadingSubmissionsRef.current = true;
         setLoadingSubmissions(true);
 
@@ -108,10 +111,10 @@ function UserComponent() {
         setSubmissions((prev) => [...prev, ...foundPosts]);
         setLoadingSubmissions(false);
         loadingSubmissionsRef.current = false;
-    }, [submitted, submissionsDone]);
+    }, [isOnline, submitted, submissionsDone]);
 
     const loadComments = useCallback(async () => {
-        if (loadingCommentsRef.current || commentsDone) return;
+        if (!isOnline || loadingCommentsRef.current || commentsDone) return;
         loadingCommentsRef.current = true;
         setLoadingComments(true);
 
@@ -147,7 +150,7 @@ function UserComponent() {
         setComments((prev) => [...prev, ...foundComments]);
         setLoadingComments(false);
         loadingCommentsRef.current = false;
-    }, [submitted, commentsDone]);
+    }, [isOnline, submitted, commentsDone]);
 
     function handleTabChange(tab: Tab) {
         setActiveTab(tab);
@@ -259,9 +262,13 @@ function UserComponent() {
                     {submissions.map((post) => (
                         <PostItem key={post.id} post={post} />
                     ))}
-                    <div ref={submissionsLoaderRef}>
-                        {loadingSubmissions && <PostListSkeleton count={3} />}
-                    </div>
+                    {isOnline && !submissionsDone && (
+                        <div ref={submissionsLoaderRef}>
+                            {loadingSubmissions && (
+                                <PostListSkeleton count={3} />
+                            )}
+                        </div>
+                    )}
                     {submissionsDone && submissions.length === 0 && (
                         <p className={styles.empty}>No submissions</p>
                     )}
@@ -273,9 +280,13 @@ function UserComponent() {
                     {comments.map((comment) => (
                         <CommentItem key={comment.id} comment={comment} />
                     ))}
-                    <div ref={commentsLoaderRef}>
-                        {loadingComments && <CommentListSkeleton count={3} />}
-                    </div>
+                    {isOnline && !commentsDone && (
+                        <div ref={commentsLoaderRef}>
+                            {loadingComments && (
+                                <CommentListSkeleton count={3} />
+                            )}
+                        </div>
+                    )}
                     {commentsDone && comments.length === 0 && (
                         <p className={styles.empty}>No comments</p>
                     )}

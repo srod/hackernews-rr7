@@ -6,6 +6,9 @@
 /dist/
 app/routeTree.gen.ts
 
+# PWA manifest (generated at build)
+public/sw-manifest.json
+
 # Cloudflare
 .mf
 .wrangler

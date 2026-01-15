@@ -1,0 +1,43 @@
+.toast {
+    position: fixed;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ff6600;
+    color: white;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 9999;
+    font-size: 0.875rem;
+    animation: slideUp 0.3s ease-out;
+}
+
+.toast button {
+    background: white;
+    color: #ff6600;
+    border: none;
+    padding: 0.375rem 0.75rem;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.toast button:hover {
+    background: #f5f5f5;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateX(-50%) translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+    }
+}

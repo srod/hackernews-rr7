@@ -8,6 +8,9 @@ import {
 import NProgress from "nprogress";
 import nProgressStyles from "nprogress/nprogress.css?url";
 import { useEffect } from "react";
+import { OfflineBanner } from "~/components/OfflineBanner";
+import { UpdateToast } from "~/components/UpdateToast";
+import { useServiceWorker } from "~/hooks/useServiceWorker";
 import globalCssUrl from "~/styles/global.css?url";
 
 export const Route = createRootRoute({
@@ -37,6 +40,7 @@ export const Route = createRootRoute({
 
 function RootComponent() {
     const isLoading = useRouterState({ select: (s) => s.status === "pending" });
+    const { state: swState, update: swUpdate } = useServiceWorker();
 
     useEffect(() => {
         if (isLoading) {
@@ -45,12 +49,6 @@ function RootComponent() {
             NProgress.done();
         }
     }, [isLoading]);
-
-    useEffect(() => {
-        if ("serviceWorker" in navigator) {
-            navigator.serviceWorker.register("/sw.js");
-        }
-    }, []);
 
     return (
         <html lang="en">
@@ -63,7 +61,9 @@ function RootComponent() {
                 <HeadContent />
             </head>
             <body>
+                <OfflineBanner />
                 <Outlet />
+                {swState === "ready" && <UpdateToast onUpdate={swUpdate} />}
                 <Scripts />
             </body>
         </html>

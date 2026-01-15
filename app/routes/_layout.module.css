@@ -3,3 +3,33 @@
     max-width: 600px;
     padding: 0 35px 35px 35px;
 }
+
+.notFound {
+    color: var(--color-text-secondary);
+    text-align: center;
+    padding: 2rem 0;
+}
+
+.error {
+    text-align: center;
+    padding: 2rem 0;
+}
+
+.error p {
+    margin: 0 0 0.5rem;
+}
+
+.errorHint {
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+}
+
+.error button {
+    margin-top: 1rem;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+}

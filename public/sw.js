@@ -1,13 +1,25 @@
-const CACHE_NAME = "hn-cache-v2";
-const API_CACHE_NAME = "hn-api-cache-v1";
+const API_CACHE_NAME = "hn-api-v1";
+const STATIC_CACHE_PREFIX = "hn-static-";
 const STATIC_ASSETS = ["/icon-512.png", "/manifest.json"];
-const API_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+let CACHE_NAME = "hn-static-v1";
 
 self.addEventListener("install", (event) => {
     event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
+        fetch("/sw-manifest.json")
+            .then((res) => res.json())
+            .then(async (manifest) => {
+                CACHE_NAME = `${STATIC_CACHE_PREFIX}${manifest.version}`;
+                const cache = await caches.open(CACHE_NAME);
+                await cache.addAll([...STATIC_ASSETS, ...manifest.assets]);
+            })
+            .catch(() => {
+                // Fallback: just cache static assets
+                return caches
+                    .open(CACHE_NAME)
+                    .then((cache) => cache.addAll(STATIC_ASSETS));
+            })
     );
-    self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
@@ -15,7 +27,11 @@ self.addEventListener("activate", (event) => {
         caches.keys().then((keys) =>
             Promise.all(
                 keys
-                    .filter((key) => key !== CACHE_NAME && key !== API_CACHE_NAME)
+                    .filter(
+                        (key) =>
+                            key.startsWith(STATIC_CACHE_PREFIX) &&
+                            key !== CACHE_NAME
+                    )
                     .map((key) => caches.delete(key))
             )
         )
@@ -23,11 +39,16 @@ self.addEventListener("activate", (event) => {
     self.clients.claim();
 });
 
+self.addEventListener("message", (event) => {
+    if (event.data === "skipWaiting") {
+        self.skipWaiting();
+    }
+});
+
 self.addEventListener("fetch", (event) => {
     const { request } = event;
     const url = new URL(request.url);
 
-    // Skip non-GET requests
     if (request.method !== "GET") return;
 
     // HN API: stale-while-revalidate
@@ -36,24 +57,40 @@ self.addEventListener("fetch", (event) => {
             caches.open(API_CACHE_NAME).then(async (cache) => {
                 const cached = await cache.match(request);
 
-                const fetchPromise = fetch(request)
+                // Return cached immediately if available
+                if (cached) {
+                    // Revalidate in background
+                    fetch(request)
+                        .then((response) => {
+                            if (response.ok) {
+                                cache.put(request, response.clone());
+                            }
+                        })
+                        .catch(() => {});
+                    return cached;
+                }
+
+                // No cache - must fetch
+                return fetch(request)
                     .then((response) => {
                         if (response.ok) {
-                            const clone = response.clone();
-                            cache.put(request, clone);
+                            cache.put(request, response.clone());
                         }
                         return response;
                     })
-                    .catch(() => cached);
-
-                // Return cached immediately if available, update in background
-                return cached || fetchPromise;
+                    .catch(() => {
+                        // Offline with no cache - return error response
+                        return new Response(JSON.stringify({ error: "offline" }), {
+                            status: 503,
+                            headers: { "Content-Type": "application/json" },
+                        });
+                    });
             })
         );
         return;
     }
 
-    // Navigation: network-first, cache response, fallback to cache
+    // Navigation: network-first
     if (request.mode === "navigate") {
         event.respondWith(
             fetch(request)
