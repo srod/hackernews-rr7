@@ -13,3 +13,23 @@
     padding-top: 15px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
+
+.comment__more {
+    margin-top: 10px;
+    margin-left: 20px;
+    padding: 0;
+    background: none;
+    border: none;
+    color: var(--secondary);
+    font-size: 0.9em;
+    cursor: pointer;
+
+    &:hover {
+        text-decoration: underline;
+    }
+
+    &:disabled {
+        cursor: wait;
+        opacity: 0.6;
+    }
+}
