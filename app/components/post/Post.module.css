@@ -21,3 +21,13 @@
     color: var(--primary);
     font-weight: 600;
 }
+
+.post__visited {
+    opacity: 0.6;
+}
+
+.post__domain {
+    font-size: 0.85em;
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: normal;
+}

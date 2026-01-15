@@ -99,6 +99,9 @@ function TypeComponent() {
 
     // Initial load when type changes
     useEffect(() => {
+        // Smooth scroll to top when switching tabs
+        window.scrollTo({ top: 0, behavior: "smooth" });
+
         setStoryIds(initialStoryIds);
         setPosts([]);
         setPage(1);
