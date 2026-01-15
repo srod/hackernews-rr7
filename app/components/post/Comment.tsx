@@ -1,6 +1,6 @@
+import { Link } from "@tanstack/react-router";
 import { formatDistance } from "date-fns";
-import { Link } from "react-router";
-import { CommentsList } from "~/routes/post/components/Comments";
+import { CommentsList } from "~/components/post/Comments";
 import type { Comment } from "~/types/Comment";
 import styles from "./Comment.module.css";
 
@@ -8,7 +8,7 @@ export function CommentItem({ comment }: { comment: Comment }) {
     return (
         <div className={styles.comment}>
             <p>
-                <Link to={`/user/${comment.by}`} viewTransition>
+                <Link to="/user/$id" params={{ id: comment.by }}>
                     {comment.by}
                 </Link>{" "}
                 •{" "}

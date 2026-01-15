@@ -1,18 +1,20 @@
+import { Link } from "@tanstack/react-router";
 import { capitalize } from "radash";
-import { Link, NavLink } from "react-router";
+import type { PostTypes } from "~/types/Post";
 import logo from "../assets/icon.png";
 import styles from "./Header.module.css";
 
-export const items = ["top", "ask", "show", "best", "new"];
+export const items: PostTypes[] = ["top", "ask", "show", "best", "new"];
 
 export function Header() {
     return (
         <header className={styles.header}>
             <h1>
                 <Link
-                    to={"/top"}
+                    to="/$type"
+                    params={{ type: "top" }}
+                    search={{ page: 1 }}
                     className={styles.header__title}
-                    viewTransition
                 >
                     <span>
                         <img src={logo} alt="Hacker News" width={19} />
@@ -21,20 +23,16 @@ export function Header() {
             </h1>
             <nav className={styles.header__nav}>
                 {items.map((item) => (
-                    <NavLink
+                    <Link
                         key={item}
-                        to={`/${item}`}
-                        className={({ isActive, isPending }) =>
-                            isPending
-                                ? ""
-                                : isActive
-                                  ? styles.header__linkActive
-                                  : styles.header__link
-                        }
-                        viewTransition
+                        to="/$type"
+                        params={{ type: item }}
+                        search={{ page: 1 }}
+                        activeProps={{ className: styles.header__linkActive }}
+                        inactiveProps={{ className: styles.header__link }}
                     >
                         {capitalize(item)}
-                    </NavLink>
+                    </Link>
                 ))}
             </nav>
         </header>

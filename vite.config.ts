@@ -1,27 +1,21 @@
-import { reactRouter } from "@react-router/dev/vite";
-import { cloudflareDevProxy } from "@react-router/dev/vite/cloudflare";
-import autoprefixer from "autoprefixer";
+import { cloudflare } from "@cloudflare/vite-plugin";
+import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import viteReact from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
-import tsconfigPaths from "vite-tsconfig-paths";
+import tsConfigPaths from "vite-tsconfig-paths";
 
-export default defineConfig(({ mode }) => {
-    return {
-        build: {
-            target: "esnext",
-            sourcemap: mode === "development",
-        },
-        css: {
-            postcss: {
-                plugins: [autoprefixer],
+export default defineConfig({
+    plugins: [
+        tsConfigPaths(),
+        cloudflare({ viteEnvironment: { name: "ssr" } }),
+        tanstackStart({
+            srcDirectory: "./app",
+            router: {
+                routesDirectory: "./routes",
+                generatedRouteTree: "./routeTree.gen.ts",
+                routeFileIgnorePattern: "components/",
             },
-        },
-        ssr: {
-            target: "webworker",
-            noExternal: ["isbot"],
-        },
-        optimizeDeps: {
-            include: ["react", "react-dom", "react-router"],
-        },
-        plugins: [cloudflareDevProxy(), reactRouter(), tsconfigPaths()],
-    };
+        }),
+        viteReact(),
+    ],
 });

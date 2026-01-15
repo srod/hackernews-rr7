@@ -1,17 +1,20 @@
+import { Link } from "@tanstack/react-router";
 import { formatDistance } from "date-fns";
-import { Link } from "react-router";
 import type { Post } from "~/types/Post";
 import styles from "./Post.module.css";
 
 export function PostItem({
     post,
     showText = false,
-}: { post: Post; showText?: boolean }) {
+}: {
+    post: Post;
+    showText?: boolean;
+}) {
     return (
         <div className={styles.post}>
             <h2>
                 {!post.url && (
-                    <Link to={`/post/${post.id}`} viewTransition>
+                    <Link to="/post/$id" params={{ id: String(post.id) }}>
                         {post.title}
                     </Link>
                 )}
@@ -23,7 +26,7 @@ export function PostItem({
             </h2>
             <p className={styles.post__info}>
                 {post.score} points •{" "}
-                <Link to={`/user/${post.by}`} viewTransition>
+                <Link to="/user/$id" params={{ id: post.by }}>
                     {post.by}
                 </Link>{" "}
                 •{" "}
@@ -31,7 +34,7 @@ export function PostItem({
                     addSuffix: true,
                 })}{" "}
                 •{" "}
-                <Link to={`/post/${post.id}`} viewTransition>
+                <Link to="/post/$id" params={{ id: String(post.id) }}>
                     {post.descendants} comments
                 </Link>
             </p>

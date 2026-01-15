@@ -2,9 +2,9 @@
 /node_modules/
 *.tsbuildinfo
 
-# React Router
-/.react-router/
-/build/
+# TanStack Start
+/dist/
+app/routeTree.gen.ts
 
 # Cloudflare
 .mf

@@ -1,18 +1,33 @@
 {
     "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
     "files": {
-        "ignore": ["node_modules/**", "build", "worker-configuration.d.ts"]
+        "includes": ["app/**", "*.json", "*.ts", "!app/routeTree.gen.ts"],
+        "ignoreUnknown": true
     },
     "overrides": [
         {
-            "include": ["package.json"],
+            "includes": ["**/package.json"],
             "formatter": {
                 "indentWidth": 2
             }
+        },
+        {
+            "includes": ["**/global.css"],
+            "linter": {
+                "rules": {
+                    "complexity": {
+                        "noImportantStyles": "off"
+                    }
+                }
+            }
         }
     ],
-    "organizeImports": {
-        "enabled": true
+    "assist": {
+        "actions": {
+            "source": {
+                "organizeImports": "on"
+            }
+        }
     },
     "linter": {
         "enabled": true,

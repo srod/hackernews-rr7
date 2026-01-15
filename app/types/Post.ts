@@ -1,6 +1,6 @@
 import type { Comment } from "./Comment";
 
-export type PostTypes = "top" | "new" | "show" | "ask";
+export type PostTypes = "top" | "new" | "show" | "ask" | "best";
 
 export type Post = {
     by: string;

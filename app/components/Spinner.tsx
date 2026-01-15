@@ -1,6 +1,5 @@
-import { cx } from "class-variance-authority";
-import { forwardRef } from "react";
 import type { ComponentRef, HTMLAttributes } from "react";
+import { forwardRef } from "react";
 import styles from "./Spinner.module.css";
 
 type SpinnerElement = ComponentRef<"span">;
@@ -14,7 +13,7 @@ export const Spinner = forwardRef<SpinnerElement, SpinnerProps>(
             <span
                 {...props}
                 ref={forwardedRef}
-                className={cx(styles.spinner, className)}
+                className={`${styles.spinner}${className ? ` ${className}` : ""}`}
             >
                 <span className={styles.spinner__leaf} />
                 <span className={styles.spinner__leaf} />
