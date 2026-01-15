@@ -1,100 +1,69 @@
-# Welcome to React Router!
+# HackerNews Clone
 
-A modern, production-ready template for building full-stack React applications using React Router.
-
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
+A fast, modern HackerNews client built with TanStack Start and deployed to Cloudflare Workers.
 
 ## Features
 
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
+- 🚀 Server-side rendering on Cloudflare Workers edge
+- ⚡️ Infinite scroll with LRU caching
+- 📱 PWA support with offline capability
+- 🔄 Auto-refresh on tab focus
+- 🎨 Dark theme with CSS Modules
+
+## Tech Stack
+
+- **Framework**: TanStack Start (React Router v7)
+- **Runtime**: Cloudflare Workers
+- **Build**: Vite 7
+- **Language**: TypeScript (strict mode)
+- **Styling**: CSS Modules
+- **Linting**: Biome
 
 ## Getting Started
 
-### Installation
-
-Install the dependencies:
-
 ```bash
-npm install
+# Install dependencies
+bun install
+
+# Start dev server
+bun run dev
 ```
 
-### Development
+App available at `http://localhost:5173`
 
-Start the development server with HMR:
-
-```bash
-npm run dev
-```
-
-Your application will be available at `http://localhost:5173`.
-
-## Building for Production
-
-Create a production build:
+## Scripts
 
 ```bash
-npm run build
+bun run dev           # Development server
+bun run build         # Build + typecheck
+bun run deploy        # Build + deploy to Cloudflare
+bun run lint          # Biome lint
+bun run format        # Biome format
+bun run typecheck     # TypeScript check
 ```
 
 ## Deployment
 
-### Docker Deployment
-
-This template includes three Dockerfiles optimized for different package managers:
-
-- `Dockerfile` - for npm
-- `Dockerfile.pnpm` - for pnpm
-- `Dockerfile.bun` - for bun
-
-To build and run using Docker:
+Deployed to Cloudflare Workers via Wrangler:
 
 ```bash
-# For npm
-docker build -t my-app .
-
-# For pnpm
-docker build -f Dockerfile.pnpm -t my-app .
-
-# For bun
-docker build -f Dockerfile.bun -t my-app .
-
-# Run the container
-docker run -p 3000:3000 my-app
+bun run deploy
 ```
 
-The containerized application can be deployed to any platform that supports Docker, including:
+Requires Cloudflare account and `wrangler` authentication.
 
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
-
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
+## Project Structure
 
 ```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
+app/
+├── routes/           # TanStack Router file-based routes
+├── components/       # React components + CSS modules
+├── hooks/            # Custom React hooks
+├── lib/              # Utility functions
+├── types/            # TypeScript types
+└── styles/           # Global CSS
 ```
 
-## Styling
+## API
 
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
-
----
-
-Built with ❤️ using React Router.
+Uses the official [HackerNews Firebase API](https://github.com/HackerNews/API).
