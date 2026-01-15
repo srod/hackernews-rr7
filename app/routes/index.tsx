@@ -5,7 +5,6 @@ export const Route = createFileRoute("/")({
         throw redirect({
             to: "/$type",
             params: { type: "top" },
-            search: { page: 1 },
         });
     },
 });

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LRUCache } from "lru-cache";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { CommentsList } from "~/components/post/Comments";
 import { PostItem } from "~/components/post/Post";
 import { CommentListSkeleton, PostSkeleton } from "~/components/Skeleton";
@@ -42,9 +42,14 @@ export const Route = createFileRoute("/_layout/post/$id")({
 });
 
 function PostComponent() {
-    const { id, post } = Route.useLoaderData();
+    const { post } = Route.useLoaderData();
     const [comments, setComments] = useState<Comment[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [loadedCount, setLoadedCount] = useState(0);
+
+    const allKids = post?.kids ?? [];
+    const hasMore = loadedCount < allKids.length;
 
     useEffect(() => {
         if (!post?.kids) {
@@ -53,11 +58,35 @@ function PostComponent() {
         }
 
         setLoading(true);
+        setComments([]);
+        setLoadedCount(0);
+
         fetchComments(post.kids, 0, MAX_TOP_LEVEL)
-            .then(setComments)
+            .then((fetched) => {
+                setComments(fetched);
+                setLoadedCount(Math.min(MAX_TOP_LEVEL, post.kids?.length ?? 0));
+            })
             .catch(() => {})
             .finally(() => setLoading(false));
     }, [post?.kids]);
+
+    const loadMore = useCallback(() => {
+        if (loadingMore || !hasMore) return;
+
+        setLoadingMore(true);
+        const nextBatch = allKids.slice(
+            loadedCount,
+            loadedCount + MAX_TOP_LEVEL
+        );
+
+        fetchComments(nextBatch, 0)
+            .then((fetched) => {
+                setComments((prev) => [...prev, ...fetched]);
+                setLoadedCount((prev) => prev + fetched.length);
+            })
+            .catch(() => {})
+            .finally(() => setLoadingMore(false));
+    }, [allKids, loadedCount, loadingMore, hasMore]);
 
     if (!post) return <div>Post not found</div>;
 
@@ -69,8 +98,9 @@ function PostComponent() {
             ) : (
                 <CommentsList
                     comments={comments}
-                    hasMore={(post.kids?.length ?? 0) > comments.length}
-                    postId={id}
+                    hasMore={hasMore}
+                    loadingMore={loadingMore}
+                    onLoadMore={loadMore}
                 />
             )}
         </>

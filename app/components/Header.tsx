@@ -13,7 +13,6 @@ export function Header() {
                 <Link
                     to="/$type"
                     params={{ type: "top" }}
-                    search={{ page: 1 }}
                     className={styles.header__title}
                 >
                     <span>
@@ -27,7 +26,6 @@ export function Header() {
                         key={item}
                         to="/$type"
                         params={{ type: item }}
-                        search={{ page: 1 }}
                         activeProps={{ className: styles.header__linkActive }}
                         inactiveProps={{ className: styles.header__link }}
                     >

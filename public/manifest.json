@@ -2,7 +2,7 @@
     "name": "Hacker News",
     "short_name": "HN",
     "description": "Hacker News reader built with TanStack Start",
-    "start_url": "/top?page=1",
+    "start_url": "/top",
     "display": "standalone",
     "background_color": "#1a1a1a",
     "theme_color": "#ff6600",
