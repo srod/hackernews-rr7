@@ -38,6 +38,16 @@
     font-size: 0.9em;
 }
 
+.comment__op {
+    margin-left: 6px;
+    padding: 1px 5px;
+    background: var(--primary);
+    border-radius: 3px;
+    color: #000;
+    font-size: 0.75em;
+    font-weight: 600;
+}
+
 .comment__deleted,
 .comment__dead {
     opacity: 0.5;

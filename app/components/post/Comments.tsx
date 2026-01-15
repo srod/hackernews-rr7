@@ -9,6 +9,7 @@ interface CommentsListProps {
     hasMore?: boolean;
     loadingMore?: boolean;
     onLoadMore?: () => void;
+    op?: string;
 }
 
 export function CommentsList({
@@ -16,6 +17,7 @@ export function CommentsList({
     hasMore,
     loadingMore,
     onLoadMore,
+    op,
 }: CommentsListProps) {
     const loaderRef = useRef<HTMLDivElement>(null);
 
@@ -41,7 +43,11 @@ export function CommentsList({
     return (
         <div className={styles.comments}>
             {comments.map((comment) => (
-                <CommentItem key={`comment-${comment.id}`} comment={comment} />
+                <CommentItem
+                    key={`comment-${comment.id}`}
+                    comment={comment}
+                    op={op}
+                />
             ))}
             {hasMore && (
                 <div ref={loaderRef}>

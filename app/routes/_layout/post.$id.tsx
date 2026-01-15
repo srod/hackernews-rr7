@@ -109,6 +109,7 @@ function PostComponent() {
                     hasMore={hasMore}
                     loadingMore={loadingMore}
                     onLoadMore={loadMore}
+                    op={post.by}
                 />
             )}
         </>

@@ -6,7 +6,14 @@ import { fetchComments } from "~/lib/fetch-comments";
 import type { Comment } from "~/types/Comment";
 import styles from "./Comment.module.css";
 
-export function CommentItem({ comment }: { comment: Comment }) {
+export function CommentItem({
+    comment,
+    op,
+}: {
+    comment: Comment;
+    op?: string;
+}) {
+    const isOP = op && comment.by === op;
     const [loadedReplies, setLoadedReplies] = useState<Comment[] | null>(null);
     const [loading, setLoading] = useState(false);
     const [collapsed, setCollapsed] = useState(false);
@@ -58,8 +65,8 @@ export function CommentItem({ comment }: { comment: Comment }) {
                 </button>{" "}
                 <Link to="/user/$id" params={{ id: comment.by }}>
                     {comment.by}
-                </Link>{" "}
-                •{" "}
+                </Link>
+                {isOP && <span className={styles.comment__op}>OP</span>} •{" "}
                 {formatDistance(new Date(comment.time * 1000), new Date(), {
                     addSuffix: true,
                 })}
@@ -79,9 +86,11 @@ export function CommentItem({ comment }: { comment: Comment }) {
                         }}
                     />
                     {comment?.comments && (
-                        <CommentsList comments={comment.comments} />
+                        <CommentsList comments={comment.comments} op={op} />
                     )}
-                    {loadedReplies && <CommentsList comments={loadedReplies} />}
+                    {loadedReplies && (
+                        <CommentsList comments={loadedReplies} op={op} />
+                    )}
                     {hasUnloadedReplies && !loadedReplies && comment.kids && (
                         <button
                             type="button"
