@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { LRUCache } from "lru-cache";
 import { capitalize } from "radash";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -59,27 +59,81 @@ async function fetchPosts(ids: string[]): Promise<Post[]> {
 }
 
 function TypeComponent() {
-    const { storyIds } = Route.useLoaderData();
+    const { type, storyIds: initialStoryIds } = Route.useLoaderData();
+    const router = useRouter();
+    const [storyIds, setStoryIds] = useState(initialStoryIds);
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const [page, setPage] = useState(1);
     const loaderRef = useRef<HTMLDivElement>(null);
+    const lastRefreshRef = useRef(0);
 
     const hasMore = page * POST_PER_PAGE < storyIds.length;
 
-    // Reset when type changes
+    // Refresh function - fetches fresh story IDs and updates first page
+    const refresh = useCallback(async () => {
+        // Debounce - don't refresh more than once per 5 seconds
+        const now = Date.now();
+        if (now - lastRefreshRef.current < 5000) return;
+        lastRefreshRef.current = now;
+        // Clear cache to force fresh fetch
+        storyIdsCache.delete(type);
+
+        const freshIds = await fetchData<string[]>(`${type}stories`);
+        storyIdsCache.set(type, freshIds);
+        setStoryIds(freshIds);
+
+        // Clear post cache for updated data
+        const firstPageIds = freshIds.slice(0, page * POST_PER_PAGE);
+        for (const id of firstPageIds) {
+            postsCache.delete(id);
+        }
+
+        const freshPosts = await fetchPosts(firstPageIds);
+        setPosts(freshPosts);
+
+        // Also invalidate router cache
+        router.invalidate();
+    }, [type, page, router]);
+
+    // Initial load when type changes
     useEffect(() => {
+        setStoryIds(initialStoryIds);
         setPosts([]);
         setPage(1);
         setLoading(true);
 
-        const initialIds = storyIds.slice(0, POST_PER_PAGE);
+        const initialIds = initialStoryIds.slice(0, POST_PER_PAGE);
         fetchPosts(initialIds)
             .then(setPosts)
             .catch(() => {})
             .finally(() => setLoading(false));
-    }, [storyIds]);
+    }, [initialStoryIds]);
+
+    // Refetch on window focus
+    useEffect(() => {
+        const onVisibilityChange = () => {
+            if (document.visibilityState === "visible") {
+                refresh();
+            }
+        };
+
+        const onFocus = () => {
+            refresh();
+        };
+
+        document.addEventListener("visibilitychange", onVisibilityChange);
+        window.addEventListener("focus", onFocus);
+
+        return () => {
+            document.removeEventListener(
+                "visibilitychange",
+                onVisibilityChange
+            );
+            window.removeEventListener("focus", onFocus);
+        };
+    }, [refresh]);
 
     const loadMore = useCallback(() => {
         if (loadingMore || !hasMore) return;
