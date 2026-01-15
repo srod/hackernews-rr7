@@ -16,3 +16,8 @@
     padding-top: 15px;
     font-size: 16px;
 }
+
+.post__new {
+    color: var(--primary);
+    font-weight: 600;
+}

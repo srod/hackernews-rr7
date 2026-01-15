@@ -4,7 +4,7 @@ import type { PostTypes } from "~/types/Post";
 import logo from "../assets/icon.png";
 import styles from "./Header.module.css";
 
-export const items: PostTypes[] = ["top", "ask", "show", "best", "new"];
+export const items: PostTypes[] = ["top", "ask", "show", "best", "new", "job"];
 
 export function Header() {
     return (

@@ -6,6 +6,7 @@ import { PostItem } from "~/components/post/Post";
 import { CommentListSkeleton, PostSkeleton } from "~/components/Skeleton";
 import { fetchComments, MAX_TOP_LEVEL } from "~/lib/fetch-comments";
 import { fetchData } from "~/lib/fetch-data";
+import { markPostVisited } from "~/lib/visited-posts";
 import type { Comment } from "~/types/Comment";
 import type { Post } from "~/types/Post";
 
@@ -50,6 +51,13 @@ function PostComponent() {
 
     const allKids = post?.kids ?? [];
     const hasMore = loadedCount < allKids.length;
+
+    // Mark post as visited to track new comments
+    useEffect(() => {
+        if (post) {
+            markPostVisited(post.id, post.descendants ?? 0);
+        }
+    }, [post]);
 
     useEffect(() => {
         if (!post?.kids) {
