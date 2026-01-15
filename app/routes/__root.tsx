@@ -14,13 +14,11 @@ export const Route = createRootRoute({
     component: RootComponent,
     errorComponent: RootErrorComponent,
     head: () => ({
+        meta: [{ name: "theme-color", content: "#ff6600" }],
         links: [
-            { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
-            {
-                rel: "apple-touch-icon",
-                href: "/favicon.svg",
-                type: "image/svg+xml",
-            },
+            { rel: "icon", href: "/icon-512.png", type: "image/png" },
+            { rel: "apple-touch-icon", href: "/icon-512.png" },
+            { rel: "manifest", href: "/manifest.json" },
             { rel: "preconnect", href: "https://fonts.googleapis.com" },
             {
                 rel: "preconnect",
@@ -47,6 +45,12 @@ function RootComponent() {
             NProgress.done();
         }
     }, [isLoading]);
+
+    useEffect(() => {
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.register("/sw.js");
+        }
+    }, []);
 
     return (
         <html lang="en">
