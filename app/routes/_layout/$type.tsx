@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { items } from "~/components/Header";
 import { PostItem } from "~/components/post/Post";
 import { PostListSkeleton } from "~/components/Skeleton";
+import { useIntersectionObserver } from "~/hooks/useIntersectionObserver";
 import { useOnlineStatus } from "~/hooks/useOnlineStatus";
 import { fetchData } from "~/lib/fetch-data";
 import type { Post, PostTypes } from "~/types/Post";
@@ -18,7 +19,7 @@ const storyIdsCache = new LRUCache<string, string[]>({
 const postsCache = new LRUCache<string, Post>({ max: 500, ttl: 1000 * 60 });
 
 function isValidType(type: string): type is PostTypes {
-    return items.includes(type as PostTypes);
+    return (items as readonly string[]).includes(type);
 }
 
 export const Route = createFileRoute("/_layout/$type")({
@@ -158,23 +159,9 @@ function TypeComponent() {
             .finally(() => setLoadingMore(false));
     }, [isOnline, storyIds, page, loadingMore, hasMore]);
 
-    // Intersection Observer for infinite scroll
-    useEffect(() => {
-        const loader = loaderRef.current;
-        if (!loader) return;
-
-        const observer = new IntersectionObserver(
-            (entries) => {
-                if (entries[0].isIntersecting && !loading && !loadingMore) {
-                    loadMore();
-                }
-            },
-            { rootMargin: "200px" }
-        );
-
-        observer.observe(loader);
-        return () => observer.disconnect();
-    }, [loadMore, loading, loadingMore]);
+    useIntersectionObserver(loaderRef, loadMore, {
+        enabled: !loading && !loadingMore,
+    });
 
     if (loading) return <PostListSkeleton />;
 

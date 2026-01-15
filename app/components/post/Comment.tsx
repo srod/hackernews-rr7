@@ -1,12 +1,12 @@
 import { Link } from "@tanstack/react-router";
 import { formatDistance } from "date-fns";
-import { useState } from "react";
+import { memo, useState } from "react";
 import { CommentsList } from "~/components/post/Comments";
 import { fetchComments } from "~/lib/fetch-comments";
 import type { Comment } from "~/types/Comment";
 import styles from "./Comment.module.css";
 
-export function CommentItem({
+export const CommentItem = memo(function CommentItem({
     comment,
     op,
 }: {
@@ -27,9 +27,14 @@ export function CommentItem({
     async function handleLoadMore() {
         if (!comment.kids || loading) return;
         setLoading(true);
-        const replies = await fetchComments(comment.kids);
-        setLoadedReplies(replies);
-        setLoading(false);
+        try {
+            const replies = await fetchComments(comment.kids);
+            setLoadedReplies(replies);
+        } catch {
+            // Silent fail for comment loading
+        } finally {
+            setLoading(false);
+        }
     }
 
     // Handle deleted comments
@@ -107,4 +112,4 @@ export function CommentItem({
             )}
         </div>
     );
-}
+});

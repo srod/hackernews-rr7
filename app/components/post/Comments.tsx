@@ -1,6 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { CommentItem } from "~/components/post/Comment";
 import { CommentListSkeleton } from "~/components/Skeleton";
+import { useIntersectionObserver } from "~/hooks/useIntersectionObserver";
 import type { Comment } from "~/types/Comment";
 import styles from "./Comments.module.css";
 
@@ -21,22 +22,9 @@ export function CommentsList({
 }: CommentsListProps) {
     const loaderRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        const loader = loaderRef.current;
-        if (!loader || !onLoadMore) return;
-
-        const observer = new IntersectionObserver(
-            (entries) => {
-                if (entries[0].isIntersecting && !loadingMore) {
-                    onLoadMore();
-                }
-            },
-            { rootMargin: "200px" }
-        );
-
-        observer.observe(loader);
-        return () => observer.disconnect();
-    }, [onLoadMore, loadingMore]);
+    useIntersectionObserver(loaderRef, onLoadMore ?? (() => {}), {
+        enabled: !!onLoadMore && !loadingMore,
+    });
 
     if (!Array.isArray(comments)) return null;
 

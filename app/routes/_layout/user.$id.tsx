@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LRUCache } from "lru-cache";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { CommentItem } from "~/components/post/Comment";
 import { PostItem } from "~/components/post/Post";
 import {
@@ -10,6 +10,7 @@ import {
 } from "~/components/Skeleton";
 import { UserItem } from "~/components/user/User";
 import styles from "~/components/user/User.module.css";
+import { useIntersectionObserver } from "~/hooks/useIntersectionObserver";
 import { useOnlineStatus } from "~/hooks/useOnlineStatus";
 import { fetchData } from "~/lib/fetch-data";
 import type { Comment } from "~/types/Comment";
@@ -169,49 +170,19 @@ function UserComponent() {
         }
     }
 
-    // Infinite scroll for submissions
-    useEffect(() => {
-        const loader = submissionsLoaderRef.current;
-        if (!loader || activeTab !== "submitted") return;
+    useIntersectionObserver(submissionsLoaderRef, loadSubmissions, {
+        enabled:
+            activeTab === "submitted" &&
+            !loadingSubmissionsRef.current &&
+            !submissionsDone,
+    });
 
-        const observer = new IntersectionObserver(
-            (entries) => {
-                if (
-                    entries[0].isIntersecting &&
-                    !loadingSubmissionsRef.current &&
-                    !submissionsDone
-                ) {
-                    loadSubmissions();
-                }
-            },
-            { rootMargin: "200px" }
-        );
-
-        observer.observe(loader);
-        return () => observer.disconnect();
-    }, [activeTab, submissionsDone, loadSubmissions]);
-
-    // Infinite scroll for comments
-    useEffect(() => {
-        const loader = commentsLoaderRef.current;
-        if (!loader || activeTab !== "comments") return;
-
-        const observer = new IntersectionObserver(
-            (entries) => {
-                if (
-                    entries[0].isIntersecting &&
-                    !loadingCommentsRef.current &&
-                    !commentsDone
-                ) {
-                    loadComments();
-                }
-            },
-            { rootMargin: "200px" }
-        );
-
-        observer.observe(loader);
-        return () => observer.disconnect();
-    }, [activeTab, commentsDone, loadComments]);
+    useIntersectionObserver(commentsLoaderRef, loadComments, {
+        enabled:
+            activeTab === "comments" &&
+            !loadingCommentsRef.current &&
+            !commentsDone,
+    });
 
     if (!user) {
         return <div>User not found</div>;

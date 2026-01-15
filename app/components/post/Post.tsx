@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { formatDistance } from "date-fns";
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { getNewCommentCount, hasVisited } from "~/lib/visited-posts";
 import type { Post } from "~/types/Post";
 import styles from "./Post.module.css";
@@ -38,7 +38,7 @@ function useRelativeTime(timestamp: number): string {
     return time;
 }
 
-export function PostItem({
+export const PostItem = memo(function PostItem({
     post,
     showText = false,
 }: {
@@ -52,7 +52,7 @@ export function PostItem({
 
     useEffect(() => {
         setVisited(hasVisited(post.id));
-        if (post.descendants > 0) {
+        if (post.descendants && post.descendants > 0) {
             setNewComments(getNewCommentCount(post.id, post.descendants));
         }
     }, [post.id, post.descendants]);
@@ -84,7 +84,7 @@ export function PostItem({
                 )}
             </h2>
             <p className={styles.post__info}>
-                {post.score > 0 && <>{post.score} points • </>}
+                {post.score && post.score > 0 && <>{post.score} points • </>}
                 {post.by && (
                     <>
                         <Link to="/user/$id" params={{ id: post.by }}>
@@ -99,7 +99,7 @@ export function PostItem({
                         {" "}
                         •{" "}
                         <Link to="/post/$id" params={{ id: String(post.id) }}>
-                            {post.descendants > 0 ? (
+                            {post.descendants && post.descendants > 0 ? (
                                 <>
                                     {post.descendants} comments
                                     {newComments > 0 && (
@@ -125,4 +125,4 @@ export function PostItem({
             )}
         </div>
     );
-}
+});
