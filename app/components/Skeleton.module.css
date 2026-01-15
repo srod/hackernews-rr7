@@ -1,0 +1,62 @@
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.05) 25%,
+        rgba(255, 255, 255, 0.1) 50%,
+        rgba(255, 255, 255, 0.05) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.skeleton__text {
+    height: 1em;
+    margin: 0.5em 0;
+}
+
+.skeleton__title {
+    height: 1.4em;
+    width: 70%;
+    margin-bottom: 0.75em;
+}
+
+.skeleton__meta {
+    height: 0.9em;
+    width: 40%;
+}
+
+.post {
+    padding: 15px 0;
+}
+
+.post + .post {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.comment {
+    margin-top: 15px;
+}
+
+.comment__body {
+    height: 3em;
+    margin-top: 0.5em;
+}
+
+.user {
+    padding: 15px 0;
+}
+
+.user__about {
+    height: 5em;
+    width: 80%;
+}

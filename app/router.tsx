@@ -4,7 +4,7 @@ import { routeTree } from "./routeTree.gen";
 export function getRouter() {
     return createTanStackRouter({
         routeTree,
-        defaultPreload: "intent",
+        defaultPreload: false, // Disabled - causes too many concurrent API requests
         scrollRestoration: true,
     });
 }

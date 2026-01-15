@@ -7,4 +7,6 @@ export type Comment = {
     type: "comment";
     kids?: string[];
     comments?: Comment[];
+    deleted?: boolean;
+    dead?: boolean;
 };

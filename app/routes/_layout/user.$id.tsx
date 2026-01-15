@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LRUCache } from "lru-cache";
+import { UserSkeleton } from "~/components/Skeleton";
 import { UserItem } from "~/components/user/User";
 import { fetchData } from "~/lib/fetch-data";
 import type { User } from "~/types/User";
@@ -32,6 +33,7 @@ export const Route = createFileRoute("/_layout/user/$id")({
         ],
     }),
     component: UserComponent,
+    pendingComponent: UserSkeleton,
 });
 
 function UserComponent() {

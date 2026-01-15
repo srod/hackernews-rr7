@@ -4,6 +4,7 @@ import { capitalize } from "radash";
 import { items } from "~/components/Header";
 import { More } from "~/components/More";
 import { PostItem } from "~/components/post/Post";
+import { PostListSkeleton } from "~/components/Skeleton";
 import { fetchData } from "~/lib/fetch-data";
 import type { Post, PostTypes } from "~/types/Post";
 
@@ -62,6 +63,7 @@ export const Route = createFileRoute("/_layout/$type")({
         ],
     }),
     component: TypeComponent,
+    pendingComponent: PostListSkeleton,
 });
 
 function TypeComponent() {
