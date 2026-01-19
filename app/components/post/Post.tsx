@@ -1,7 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { formatDistance } from "date-fns";
 import { memo, useEffect, useState } from "react";
-import { getNewCommentCount, hasVisited } from "~/lib/visited-posts";
+import {
+    getNewCommentCount,
+    hasVisited,
+    markPostVisited,
+} from "~/lib/visited-posts";
 import type { Post } from "~/types/Post";
 import styles from "./Post.module.css";
 
@@ -71,7 +75,14 @@ export const PostItem = memo(function PostItem({
                 )}
                 {post.url && (
                     <>
-                        <a href={post.url} target="_blank" rel="noreferrer">
+                        <a
+                            href={post.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            onClick={() =>
+                                markPostVisited(post.id, post.descendants ?? 0)
+                            }
+                        >
                             {post.title}
                         </a>
                         {domain && (
