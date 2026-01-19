@@ -79,9 +79,10 @@ export const PostItem = memo(function PostItem({
                             href={post.url}
                             target="_blank"
                             rel="noreferrer"
-                            onClick={() =>
-                                markPostVisited(post.id, post.descendants ?? 0)
-                            }
+                            onClick={() => {
+                                markPostVisited(post.id, post.descendants ?? 0);
+                                setVisited(true);
+                            }}
                         >
                             {post.title}
                         </a>
