@@ -1,128 +1,113 @@
 # AGENTS.md - Coding Agent Guidelines
 
-## Project Overview
+**Generated:** 2026-01-19
+**Commit:** 3d614a8
+**Branch:** main
 
-HackerNews clone built with TanStack Start (React Router v7), deployed to Cloudflare Workers.
+## Overview
 
-**Stack**: React 19, TanStack Router, Vite 7, TypeScript, Biome, Cloudflare Workers
+HackerNews clone with TanStack Start (React Router v7), SSR on Cloudflare Workers. Features infinite scroll, LRU caching, PWA offline support, auto-refresh on focus.
 
-## Build/Lint/Test Commands
+**Stack**: React 19, TanStack Router, Vite 7, TypeScript (strict), Biome, Cloudflare Workers
+
+## Commands
 
 ```bash
-# Development
-bun run dev              # Start dev server
-
-# Build & Deploy
-bun run build            # Build + typecheck (vite build && tsc --noEmit)
+bun run dev              # Dev server (localhost:5173)
+bun run build            # Build + typecheck
 bun run deploy           # Build + deploy to Cloudflare Workers
-bun run typecheck        # TypeScript only (tsc)
-bun run typegen          # Generate Cloudflare types (wrangler types)
-
-# Linting & Formatting
 bun run lint             # Biome lint
 bun run format           # Biome format (auto-fix)
-bun run format:check     # Biome check (no fix)
-
-# No tests configured - project has no test suite
+bun run typecheck        # TypeScript only
+bun run typegen          # Generate Cloudflare types
+# No tests configured
 ```
 
-## Project Structure
+## Structure
 
 ```
 app/
 ├── routes/              # TanStack Router file-based routes
-│   ├── __root.tsx       # Root layout (html, head, body)
-│   ├── _layout.tsx      # App layout with Header
-│   ├── _layout/         # Nested routes under layout
-│   │   ├── $type.tsx    # Dynamic route: /top, /new, /ask, etc.
-│   │   ├── post.$id.tsx # Post detail page
-│   │   └── user.$id.tsx # User profile page
-│   └── index.tsx        # Redirect to /top
-├── components/          # React components (colocated with CSS modules)
-├── hooks/               # Custom React hooks (use* prefix)
-├── lib/                 # Utility functions
-├── types/               # TypeScript type definitions
-├── styles/              # Global CSS
-└── routeTree.gen.ts     # Auto-generated (DO NOT EDIT)
+│   ├── __root.tsx       # Root layout (html, head, body, PWA components)
+│   ├── _layout.tsx      # App layout with Header, error/404 handling
+│   ├── _layout/         # Nested content routes
+│   │   ├── $type.tsx    # Story feeds (/top, /new, /ask, /show, /job)
+│   │   ├── post.$id.tsx # Post detail + comments
+│   │   └── user.$id.tsx # User profile + submissions
+│   └── index.tsx        # Redirect → /top
+├── components/          # Feature-based organization
+│   ├── post/            # Post, Comment, Comments + CSS modules
+│   ├── user/            # User + CSS module
+│   ├── Header.tsx       # Navigation
+│   ├── Skeleton.tsx     # Loading states
+│   ├── OfflineBanner.tsx
+│   └── UpdateToast.tsx
+├── hooks/               # useOnlineStatus, useIntersectionObserver, useServiceWorker
+├── lib/                 # fetch-data (concurrency), fetch-comments, visited-posts
+├── types/               # Post, Comment, User
+├── styles/              # global.css
+└── routeTree.gen.ts     # AUTO-GENERATED (DO NOT EDIT)
 ```
 
-## Code Style
+## Where to Look
+
+| Task | Location | Notes |
+|------|----------|-------|
+| Add story type | `app/components/Header.tsx` `items` array | Then loader handles automatically |
+| API fetching | `app/lib/fetch-data.ts` | 6-connection concurrency limit |
+| Comment loading | `app/lib/fetch-comments.ts` | Recursive, depth-limited (2 levels) |
+| Visited tracking | `app/lib/visited-posts.ts` | LocalStorage, new comment counts |
+| Route data loading | `app/routes/_layout/*.tsx` loaders | Server-side, cached 30s |
+| Infinite scroll | `app/hooks/useIntersectionObserver.ts` | Used in routes |
+| Offline support | `public/sw.js` + components | Stale-while-revalidate |
+| CSS variables | `app/styles/global.css` | `--background`, `--secondary`, etc. |
+
+## Data Architecture
+
+### Caching Layers
+1. **Service Worker**: Stale-while-revalidate for HN API + static assets
+2. **Router**: 30s `staleTime` on loaders (SSR cache)
+3. **Client LRU**: Per-type story IDs (10 entries, 1min), posts (500 entries, 1min)
+
+### Fetching Patterns
+- **Concurrency limited**: Max 6 parallel requests (Chrome connection limit)
+- **Batch loading**: Comments load top 15, then expand on demand
+- **Debounced refresh**: 5s minimum between auto-refreshes on focus
+- **Race condition prevention**: Loading refs prevent duplicate fetches
+
+### Error Handling
+```typescript
+// Non-critical (cache miss, background refresh): silent fail OK
+fetchPosts(ids).then(setPosts).catch(() => {});
+
+// Critical: throw with status
+if (res.status !== 200) throw new Error(`Status ${res.status}`);
+```
+
+## Conventions
 
 ### Formatting (Biome)
-
-- **Indentation**: 4 spaces (2 for package.json)
-- **Quotes**: Double quotes
-- **Semicolons**: Always
-- **Trailing commas**: ES5 style
-- **Line width**: Default (80)
+- 4 spaces (2 for package.json)
+- Double quotes, semicolons always, ES5 trailing commas
 
 ### TypeScript
-
-- **Strict mode**: Enabled
-- **No `any`**: Use proper types or `unknown`
-- **No non-null assertions (`!`)**: Handle nullability explicitly
-- **No type assertions (`as Type`)**: Use type guards instead
-- **Explicit type imports**: Use `import type { X }` for types
-
-```typescript
-// Good
-import type { Post } from "~/types/Post";
-import { fetchData } from "~/lib/fetch-data";
-
-// Bad
-import { Post } from "~/types/Post";  // Missing 'type' keyword
-```
-
-### Path Aliases
-
-Use `~/` alias for app imports (configured in tsconfig.json):
-
-```typescript
-import { Header } from "~/components/Header";
-import type { Post } from "~/types/Post";
-```
-
-### Import Order (Biome organizeImports)
-
-1. External packages (react, @tanstack/*, etc.)
-2. Internal modules (`~/...`)
-3. Relative imports (`./`, `../`)
-4. CSS/asset imports
-
-### Naming Conventions
-
-| Type | Convention | Example |
-|------|------------|---------|
-| Components | PascalCase function | `function Header()` |
-| Hooks | camelCase with `use` prefix | `useOnlineStatus` |
-| Types | PascalCase | `type PostTypes = ...` |
-| Constants | UPPER_SNAKE_CASE | `const POST_PER_PAGE = 30` |
-| CSS Modules | BEM-like with component prefix | `.header__nav`, `.header__linkActive` |
-| Route files | kebab-case with params | `post.$id.tsx`, `user.$id.tsx` |
+- Strict mode, no `any`, no `!`, no `as Type`
+- Use `import type { X }` for types
+- Path alias: `~/` → `./app/`
 
 ### React Components
+- Function declarations, not arrows: `export function Header() {}`
+- Named exports, no defaults
+- Colocated CSS modules: `Component.tsx` + `Component.module.css`
 
-- Use function declarations (not arrow functions) for components
-- Export named functions, not default exports
-- Colocate CSS modules with components
+### CSS Modules
+- BEM-like: `.post`, `.post__title`, `.post__titleVisited`
+- Use CSS vars from global.css: `var(--background)`
 
-```typescript
-// Good
-export function PostItem({ post }: { post: Post }) {
-    return <div className={styles.post}>{post.title}</div>;
-}
-
-// Bad
-export default ({ post }) => <div>{post.title}</div>;
-```
-
-### TanStack Router Patterns
-
-Routes export a `Route` constant created with `createFileRoute`:
-
+### Route Patterns
 ```typescript
 export const Route = createFileRoute("/_layout/$type")({
-    loader: async ({ params }) => { /* fetch data */ },
+    loader: async ({ params }) => { /* SSR data fetch */ },
     component: TypeComponent,
     pendingComponent: LoadingSkeleton,
     head: ({ loaderData }) => ({ meta: [{ title: "..." }] }),
@@ -130,86 +115,65 @@ export const Route = createFileRoute("/_layout/$type")({
 });
 ```
 
-### CSS Modules
+### Naming
+| Type | Convention | Example |
+|------|------------|---------|
+| Components | PascalCase function | `function PostItem()` |
+| Hooks | use* prefix | `useOnlineStatus` |
+| Types | PascalCase | `type PostTypes` |
+| Constants | UPPER_SNAKE | `POST_PER_PAGE` |
+| CSS classes | BEM-like | `.header__linkActive` |
+| Route files | param syntax | `post.$id.tsx` |
 
-- One `.module.css` file per component
-- Use BEM-like naming: `.component__element`, `.component__elementModifier`
-- Use CSS custom properties from global.css: `var(--background)`, `var(--secondary)`
+## Anti-Patterns (This Project)
 
-```css
-.post {
-    padding: 16px;
-}
+- **No `any`, `!`, `as Type`**: Use proper types or `unknown`
+- **No editing `routeTree.gen.ts`**: Auto-generated by router plugin
+- **No editing `worker-configuration.d.ts`**: Generated by wrangler
+- **No SSR data in client state**: Use loader data, not useState for initial
+- **No uncached recursive fetches**: Always use LRU cache for HN API items
 
-.post__title {
-    color: var(--color-white);
-}
+## Hidden Patterns
 
-.post__titleVisited {
-    color: var(--secondary);
-}
-```
+### Refresh Logic
+- Auto-refresh on window focus/visibility change
+- 5s debounce prevents API spam
+- Invalidates both LRU cache AND router cache
 
-### Error Handling
+### Visited Posts
+- LocalStorage tracks post IDs + comment counts
+- Shows "(N new)" badge for unread comments
+- Updates on external link click or post view
 
-- Use try/catch with proper error typing
-- Empty catch blocks acceptable for non-critical operations (e.g., cache misses)
-- Throw `Error` objects with descriptive messages
+### Comment Threads
+- Collapsible with reply count when collapsed
+- OP comments highlighted with "OP" label
+- Lazy loading of nested replies
+- Handles deleted/dead comments gracefully
 
-```typescript
-// Acceptable for non-critical
-fetchPosts(ids)
-    .then(setPosts)
-    .catch(() => {});  // Silent fail OK for background refresh
+### Live Relative Time
+- Custom hook updates "2 hours ago" every 60s
+- Prevents stale timestamps in long sessions
 
-// Critical operations need handling
-try {
-    const res = await fetch(url);
-    if (res.status !== 200) {
-        throw new Error(`Status ${res.status}`);
-    }
-} catch (error) {
-    // Handle or rethrow
-}
-```
-
-### Type Definitions
-
-Define types in `app/types/` with explicit property types:
-
-```typescript
-export type Post = {
-    by: string;
-    id: number;
-    title: string;
-    kids?: string[];      // Optional arrays
-    comments?: Comment[]; // Nested types
-};
-```
+### Offline Mode
+- OfflineBanner shows when navigator.onLine false
+- Hides "load more" and refresh when offline
+- Service worker serves cached content
 
 ## Cloudflare Workers
 
-- Config in `wrangler.toml`
-- `compatibility_date` should match workerd version
-- Use `nodejs_compat` flag for Node.js APIs
-- SSR handled by `@tanstack/react-start/server-entry`
+- Config: `wrangler.toml`
+- `nodejs_compat` flag required for Node.js APIs
+- SSR via `@tanstack/react-start/server-entry`
+- `compatibility_date`: 2026-01-14
 
 ## Key Dependencies
 
-- **@tanstack/react-router**: File-based routing
-- **@tanstack/react-start**: SSR framework
-- **@cloudflare/vite-plugin**: Cloudflare Workers integration
-- **lru-cache**: Client-side caching
-- **date-fns**: Date formatting
-- **radash**: Utility functions (capitalize, etc.)
-- **nprogress**: Loading progress bar
-
-## Generated Files (DO NOT EDIT)
-
-- `app/routeTree.gen.ts` - Auto-generated by TanStack Router plugin
-- `worker-configuration.d.ts` - Generated by `wrangler types`
-
-## Communication Style
-
-- Be extremely concise in commit messages and responses
-- Sacrifice grammar for brevity when appropriate
+| Package | Purpose |
+|---------|---------|
+| @tanstack/react-router | File-based routing |
+| @tanstack/react-start | SSR framework |
+| lru-cache | Client-side caching |
+| date-fns | Relative time formatting |
+| radash | Utilities (capitalize) |
+| nprogress | Route transition progress bar |
