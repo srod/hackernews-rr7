@@ -81,7 +81,8 @@ function TypeComponent() {
         const now = Date.now();
         if (now - lastRefreshRef.current < 5000) return;
         lastRefreshRef.current = now;
-        // Clear cache to force fresh fetch
+
+        navigator.serviceWorker?.controller?.postMessage("clearApiCache");
         storyIdsCache.delete(type);
 
         const freshIds = await fetchData<string[]>(`${type}stories`);
