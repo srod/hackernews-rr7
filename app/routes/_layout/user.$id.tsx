@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LRUCache } from "lru-cache";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useReducer, useRef } from "react";
 import { CommentItem } from "~/components/post/Comment";
 import { PostItem } from "~/components/post/Post";
 import {
@@ -28,6 +28,48 @@ type Item = Post | Comment;
 const BATCH_SIZE = 20;
 const MIN_RESULTS = 5;
 
+type UserState = {
+    activeTab: Tab;
+    submissions: Post[];
+    loadingSubmissions: boolean;
+    submissionsDone: boolean;
+    comments: Comment[];
+    loadingComments: boolean;
+    commentsDone: boolean;
+};
+
+type UserAction =
+    | { type: "SET_TAB"; tab: Tab }
+    | { type: "SUBMISSIONS_START" }
+    | { type: "SUBMISSIONS_LOADED"; posts: Post[]; done: boolean }
+    | { type: "COMMENTS_START" }
+    | { type: "COMMENTS_LOADED"; comments: Comment[]; done: boolean };
+
+function userReducer(state: UserState, action: UserAction): UserState {
+    switch (action.type) {
+        case "SET_TAB":
+            return { ...state, activeTab: action.tab };
+        case "SUBMISSIONS_START":
+            return { ...state, loadingSubmissions: true };
+        case "SUBMISSIONS_LOADED":
+            return {
+                ...state,
+                submissions: [...state.submissions, ...action.posts],
+                loadingSubmissions: false,
+                submissionsDone: action.done,
+            };
+        case "COMMENTS_START":
+            return { ...state, loadingComments: true };
+        case "COMMENTS_LOADED":
+            return {
+                ...state,
+                comments: [...state.comments, ...action.comments],
+                loadingComments: false,
+                commentsDone: action.done,
+            };
+    }
+}
+
 export const Route = createFileRoute("/_layout/user/$id")({
     loader: async ({ params }) => {
         const id = params.id;
@@ -52,23 +94,31 @@ export const Route = createFileRoute("/_layout/user/$id")({
 function UserComponent() {
     const { user } = Route.useLoaderData();
     const isOnline = useOnlineStatus();
-    const [activeTab, setActiveTab] = useState<Tab>("about");
+    const [state, dispatch] = useReducer(userReducer, {
+        activeTab: "about" as Tab,
+        submissions: [],
+        loadingSubmissions: false,
+        submissionsDone: false,
+        comments: [],
+        loadingComments: false,
+        commentsDone: false,
+    });
+    const {
+        activeTab,
+        submissions,
+        loadingSubmissions,
+        submissionsDone,
+        comments,
+        loadingComments,
+        commentsDone,
+    } = state;
 
-    // Submissions state
-    const [submissions, setSubmissions] = useState<Post[]>([]);
     const submissionsIndexRef = useRef(0);
-    const [loadingSubmissions, setLoadingSubmissions] = useState(false);
-    const [submissionsDone, setSubmissionsDone] = useState(false);
     const submissionsLoaderRef = useRef<HTMLDivElement>(null);
 
-    // Comments state
-    const [comments, setComments] = useState<Comment[]>([]);
     const commentsIndexRef = useRef(0);
-    const [loadingComments, setLoadingComments] = useState(false);
-    const [commentsDone, setCommentsDone] = useState(false);
     const commentsLoaderRef = useRef<HTMLDivElement>(null);
 
-    // Loading refs to prevent race conditions
     const loadingSubmissionsRef = useRef(false);
     const loadingCommentsRef = useRef(false);
 
@@ -78,16 +128,17 @@ function UserComponent() {
         if (!isOnline || loadingSubmissionsRef.current || submissionsDone)
             return;
         loadingSubmissionsRef.current = true;
-        setLoadingSubmissions(true);
+        dispatch({ type: "SUBMISSIONS_START" });
 
         let foundPosts: Post[] = [];
+        let done = false;
 
         while (foundPosts.length < MIN_RESULTS) {
             const startIndex = submissionsIndexRef.current;
             const ids = submitted.slice(startIndex, startIndex + BATCH_SIZE);
 
             if (ids.length === 0) {
-                setSubmissionsDone(true);
+                done = true;
                 break;
             }
 
@@ -104,29 +155,29 @@ function UserComponent() {
             submissionsIndexRef.current = startIndex + BATCH_SIZE;
 
             if (submissionsIndexRef.current >= submitted.length) {
-                setSubmissionsDone(true);
+                done = true;
                 break;
             }
         }
 
-        setSubmissions((prev) => [...prev, ...foundPosts]);
-        setLoadingSubmissions(false);
+        dispatch({ type: "SUBMISSIONS_LOADED", posts: foundPosts, done });
         loadingSubmissionsRef.current = false;
     }, [isOnline, submitted, submissionsDone]);
 
     const loadComments = useCallback(async () => {
         if (!isOnline || loadingCommentsRef.current || commentsDone) return;
         loadingCommentsRef.current = true;
-        setLoadingComments(true);
+        dispatch({ type: "COMMENTS_START" });
 
         let foundComments: Comment[] = [];
+        let done = false;
 
         while (foundComments.length < MIN_RESULTS) {
             const startIndex = commentsIndexRef.current;
             const ids = submitted.slice(startIndex, startIndex + BATCH_SIZE);
 
             if (ids.length === 0) {
-                setCommentsDone(true);
+                done = true;
                 break;
             }
 
@@ -143,18 +194,21 @@ function UserComponent() {
             commentsIndexRef.current = startIndex + BATCH_SIZE;
 
             if (commentsIndexRef.current >= submitted.length) {
-                setCommentsDone(true);
+                done = true;
                 break;
             }
         }
 
-        setComments((prev) => [...prev, ...foundComments]);
-        setLoadingComments(false);
+        dispatch({
+            type: "COMMENTS_LOADED",
+            comments: foundComments,
+            done,
+        });
         loadingCommentsRef.current = false;
     }, [isOnline, submitted, commentsDone]);
 
     function handleTabChange(tab: Tab) {
-        setActiveTab(tab);
+        dispatch({ type: "SET_TAB", tab });
         if (
             tab === "submitted" &&
             submissions.length === 0 &&

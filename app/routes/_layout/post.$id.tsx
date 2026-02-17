@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LRUCache } from "lru-cache";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useReducer } from "react";
 import { CommentsList } from "~/components/post/Comments";
 import { PostItem } from "~/components/post/Post";
 import { CommentListSkeleton, PostSkeleton } from "~/components/Skeleton";
@@ -43,59 +43,111 @@ export const Route = createFileRoute("/_layout/post/$id")({
     ),
 });
 
+type CommentsState = {
+    comments: Comment[];
+    loading: boolean;
+    loadingMore: boolean;
+    loadedCount: number;
+};
+
+type CommentsAction =
+    | { type: "RESET" }
+    | { type: "NO_KIDS" }
+    | { type: "COMMENTS_LOADED"; comments: Comment[]; loadedCount: number }
+    | { type: "LOAD_MORE_START" }
+    | { type: "LOAD_MORE_DONE"; comments: Comment[] }
+    | { type: "LOAD_MORE_ERROR" };
+
+function commentsReducer(
+    state: CommentsState,
+    action: CommentsAction,
+): CommentsState {
+    switch (action.type) {
+        case "RESET":
+            return {
+                comments: [],
+                loading: true,
+                loadingMore: false,
+                loadedCount: 0,
+            };
+        case "NO_KIDS":
+            return { ...state, loading: false };
+        case "COMMENTS_LOADED":
+            return {
+                ...state,
+                comments: action.comments,
+                loadedCount: action.loadedCount,
+                loading: false,
+            };
+        case "LOAD_MORE_START":
+            return { ...state, loadingMore: true };
+        case "LOAD_MORE_DONE":
+            return {
+                ...state,
+                comments: [...state.comments, ...action.comments],
+                loadedCount: state.loadedCount + action.comments.length,
+                loadingMore: false,
+            };
+        case "LOAD_MORE_ERROR":
+            return { ...state, loadingMore: false };
+    }
+}
+
 function PostComponent() {
     const { post } = Route.useLoaderData();
     const isOnline = useOnlineStatus();
-    const [comments, setComments] = useState<Comment[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [loadingMore, setLoadingMore] = useState(false);
-    const [loadedCount, setLoadedCount] = useState(0);
+    const [state, dispatch] = useReducer(commentsReducer, {
+        comments: [],
+        loading: true,
+        loadingMore: false,
+        loadedCount: 0,
+    });
+    const { comments, loading, loadingMore, loadedCount } = state;
 
     const allKids = post?.kids ?? [];
     const hasMore = loadedCount < allKids.length;
 
-    // Mark post as visited to track new comments
     useEffect(() => {
-        if (post) {
-            markPostVisited(post.id, post.descendants ?? 0);
-        }
+        if (!post) return;
+        markPostVisited(post.id, post.descendants ?? 0);
     }, [post]);
 
     useEffect(() => {
         if (!post?.kids) {
-            setLoading(false);
+            dispatch({ type: "NO_KIDS" });
             return;
         }
 
-        setLoading(true);
-        setComments([]);
-        setLoadedCount(0);
+        dispatch({ type: "RESET" });
 
         fetchComments(post.kids, 0, MAX_TOP_LEVEL)
-            .then((fetched) => {
-                setComments(fetched);
-                setLoadedCount(Math.min(MAX_TOP_LEVEL, post.kids?.length ?? 0));
-            })
-            .catch(() => {})
-            .finally(() => setLoading(false));
+            .then((fetched) =>
+                dispatch({
+                    type: "COMMENTS_LOADED",
+                    comments: fetched,
+                    loadedCount: Math.min(
+                        MAX_TOP_LEVEL,
+                        post.kids?.length ?? 0,
+                    ),
+                })
+            )
+            .catch(() => dispatch({ type: "NO_KIDS" }));
     }, [post?.kids]);
 
     const loadMore = useCallback(() => {
         if (!isOnline || loadingMore || !hasMore) return;
 
-        setLoadingMore(true);
+        dispatch({ type: "LOAD_MORE_START" });
         const nextBatch = allKids.slice(
             loadedCount,
-            loadedCount + MAX_TOP_LEVEL
+            loadedCount + MAX_TOP_LEVEL,
         );
 
         fetchComments(nextBatch, 0)
-            .then((fetched) => {
-                setComments((prev) => [...prev, ...fetched]);
-                setLoadedCount((prev) => prev + fetched.length);
-            })
-            .catch(() => {})
-            .finally(() => setLoadingMore(false));
+            .then((fetched) =>
+                dispatch({ type: "LOAD_MORE_DONE", comments: fetched })
+            )
+            .catch(() => dispatch({ type: "LOAD_MORE_ERROR" }));
     }, [isOnline, allKids, loadedCount, loadingMore, hasMore]);
 
     if (!post) return <div>Post not found</div>;

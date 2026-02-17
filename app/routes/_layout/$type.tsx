@@ -1,7 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { LRUCache } from "lru-cache";
 import { capitalize } from "radash";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef } from "react";
 import { items } from "~/components/Header";
 import { PostItem } from "~/components/post/Post";
 import { PostListSkeleton } from "~/components/Skeleton";
@@ -60,24 +60,73 @@ async function fetchPosts(ids: string[]): Promise<Post[]> {
     );
 }
 
+type TypeState = {
+    storyIds: string[];
+    posts: Post[];
+    loading: boolean;
+    loadingMore: boolean;
+    page: number;
+};
+
+type TypeAction =
+    | { type: "RESET"; storyIds: string[] }
+    | { type: "POSTS_LOADED"; posts: Post[] }
+    | { type: "REFRESH"; storyIds: string[]; posts: Post[] }
+    | { type: "LOAD_MORE_START" }
+    | { type: "LOAD_MORE_DONE"; posts: Post[] }
+    | { type: "LOAD_MORE_ERROR" };
+
+function typeReducer(state: TypeState, action: TypeAction): TypeState {
+    switch (action.type) {
+        case "RESET":
+            return {
+                ...state,
+                storyIds: action.storyIds,
+                posts: [],
+                page: 1,
+                loading: true,
+            };
+        case "POSTS_LOADED":
+            return { ...state, posts: action.posts, loading: false };
+        case "REFRESH":
+            return {
+                ...state,
+                storyIds: action.storyIds,
+                posts: action.posts,
+            };
+        case "LOAD_MORE_START":
+            return { ...state, loadingMore: true };
+        case "LOAD_MORE_DONE":
+            return {
+                ...state,
+                posts: [...state.posts, ...action.posts],
+                page: state.page + 1,
+                loadingMore: false,
+            };
+        case "LOAD_MORE_ERROR":
+            return { ...state, loadingMore: false };
+    }
+}
+
 function TypeComponent() {
     const { type, storyIds: initialStoryIds } = Route.useLoaderData();
     const router = useRouter();
     const isOnline = useOnlineStatus();
-    const [storyIds, setStoryIds] = useState(initialStoryIds);
-    const [posts, setPosts] = useState<Post[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [loadingMore, setLoadingMore] = useState(false);
-    const [page, setPage] = useState(1);
+    const [state, dispatch] = useReducer(typeReducer, {
+        storyIds: initialStoryIds,
+        posts: [],
+        loading: true,
+        loadingMore: false,
+        page: 1,
+    });
+    const { storyIds, posts, loading, loadingMore, page } = state;
     const loaderRef = useRef<HTMLDivElement>(null);
     const lastRefreshRef = useRef(0);
 
     const hasMore = page * POST_PER_PAGE < storyIds.length;
 
-    // Refresh function - fetches fresh story IDs and updates first page
     const refresh = useCallback(async () => {
         if (!isOnline) return;
-        // Debounce - don't refresh more than once per 5 seconds
         const now = Date.now();
         if (now - lastRefreshRef.current < 5000) return;
         lastRefreshRef.current = now;
@@ -87,39 +136,30 @@ function TypeComponent() {
 
         const freshIds = await fetchData<string[]>(`${type}stories`);
         storyIdsCache.set(type, freshIds);
-        setStoryIds(freshIds);
 
-        // Clear post cache for updated data
         const firstPageIds = freshIds.slice(0, page * POST_PER_PAGE);
         for (const id of firstPageIds) {
             postsCache.delete(id);
         }
 
         const freshPosts = await fetchPosts(firstPageIds);
-        setPosts(freshPosts);
+        dispatch({ type: "REFRESH", storyIds: freshIds, posts: freshPosts });
 
-        // Also invalidate router cache
         router.invalidate();
     }, [isOnline, type, page, router]);
 
-    // Initial load when type changes
     useEffect(() => {
-        // Smooth scroll to top when switching tabs
         window.scrollTo({ top: 0, behavior: "smooth" });
-
-        setStoryIds(initialStoryIds);
-        setPosts([]);
-        setPage(1);
-        setLoading(true);
+        dispatch({ type: "RESET", storyIds: initialStoryIds });
 
         const initialIds = initialStoryIds.slice(0, POST_PER_PAGE);
         fetchPosts(initialIds)
-            .then(setPosts)
-            .catch(() => {})
-            .finally(() => setLoading(false));
+            .then((fetched) =>
+                dispatch({ type: "POSTS_LOADED", posts: fetched })
+            )
+            .catch(() => dispatch({ type: "POSTS_LOADED", posts: [] }));
     }, [initialStoryIds]);
 
-    // Refetch on window focus
     useEffect(() => {
         const onVisibilityChange = () => {
             if (document.visibilityState === "visible") {
@@ -146,18 +186,16 @@ function TypeComponent() {
     const loadMore = useCallback(() => {
         if (!isOnline || loadingMore || !hasMore) return;
 
-        setLoadingMore(true);
+        dispatch({ type: "LOAD_MORE_START" });
         const start = page * POST_PER_PAGE;
         const end = start + POST_PER_PAGE;
         const nextIds = storyIds.slice(start, end);
 
         fetchPosts(nextIds)
-            .then((newPosts) => {
-                setPosts((prev) => [...prev, ...newPosts]);
-                setPage((prev) => prev + 1);
-            })
-            .catch(() => {})
-            .finally(() => setLoadingMore(false));
+            .then((newPosts) =>
+                dispatch({ type: "LOAD_MORE_DONE", posts: newPosts })
+            )
+            .catch(() => dispatch({ type: "LOAD_MORE_ERROR" }));
     }, [isOnline, storyIds, page, loadingMore, hasMore]);
 
     useIntersectionObserver(loaderRef, loadMore, {

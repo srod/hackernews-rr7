@@ -43,11 +43,11 @@ function RootComponent() {
     const { state: swState, update: swUpdate } = useServiceWorker();
 
     useEffect(() => {
-        if (isLoading) {
-            NProgress.start();
-        } else {
+        if (!isLoading) return;
+        NProgress.start();
+        return () => {
             NProgress.done();
-        }
+        };
     }, [isLoading]);
 
     return (
