@@ -60,7 +60,7 @@ type CommentsAction =
 
 function commentsReducer(
     state: CommentsState,
-    action: CommentsAction,
+    action: CommentsAction
 ): CommentsState {
     switch (action.type) {
         case "RESET":
@@ -127,7 +127,7 @@ function PostComponent() {
                     comments: fetched,
                     loadedCount: Math.min(
                         MAX_TOP_LEVEL,
-                        post.kids?.length ?? 0,
+                        post.kids?.length ?? 0
                     ),
                 })
             )
@@ -140,7 +140,7 @@ function PostComponent() {
         dispatch({ type: "LOAD_MORE_START" });
         const nextBatch = allKids.slice(
             loadedCount,
-            loadedCount + MAX_TOP_LEVEL,
+            loadedCount + MAX_TOP_LEVEL
         );
 
         fetchComments(nextBatch, 0)

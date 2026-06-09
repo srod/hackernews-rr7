@@ -35,12 +35,10 @@
     }
 }
 
-.tabs__active {
-    &,
-    &:hover {
-        color: var(--primary);
-        border-bottom-color: var(--primary);
-    }
+.tabs .tabs__active,
+.tabs .tabs__active:hover {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
 }
 
 .about {
@@ -56,7 +54,7 @@
     font-size: 16px;
 }
 
-.loadMore {
+.user .loadMore {
     display: block;
     margin: 20px 0;
     padding: 10px 20px;
@@ -66,10 +64,10 @@
     color: var(--secondary);
     font-size: 14px;
     cursor: pointer;
+}
 
-    &:hover {
-        border-color: var(--secondary);
-    }
+.user .loadMore:hover {
+    border-color: var(--secondary);
 }
 
 .empty {
