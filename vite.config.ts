@@ -5,7 +5,6 @@ import { cloudflare } from "@cloudflare/vite-plugin";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
-import tsConfigPaths from "vite-tsconfig-paths";
 
 function swManifestPlugin(): Plugin {
     return {
@@ -43,8 +42,10 @@ function swManifestPlugin(): Plugin {
 }
 
 export default defineConfig({
+    resolve: {
+        tsconfigPaths: true,
+    },
     plugins: [
-        tsConfigPaths(),
         cloudflare({ viteEnvironment: { name: "ssr" } }),
         tanstackStart({
             srcDirectory: "./app",
