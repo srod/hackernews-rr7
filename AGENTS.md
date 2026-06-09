@@ -1,14 +1,19 @@
 # AGENTS.md - Coding Agent Guidelines
 
-**Generated:** 2026-02-11
-**Commit:** 72902b2
+**Updated:** 2026-06-09
+**Commit:** f306d14
 **Branch:** main
 
 ## Overview
 
-HackerNews clone with TanStack Start (React Router v7), SSR on Cloudflare Workers. Features infinite scroll, LRU caching, PWA offline support, auto-refresh on focus.
+HackerNews clone with TanStack Start and TanStack Router, SSR on Cloudflare Workers. Features infinite scroll, LRU caching, PWA offline support, auto-refresh on focus.
 
-**Stack**: React 19, TanStack Router, Vite 7, TypeScript (strict), Biome, Cloudflare Workers
+**Stack**: React 19, TanStack Router, Vite 8, TypeScript 6 (strict), Biome, Cloudflare Workers
+
+## Requirements
+
+- Node.js 24 (`.node-version`, `package.json` engines)
+- Bun
 
 ## Commands
 
@@ -16,12 +21,13 @@ HackerNews clone with TanStack Start (React Router v7), SSR on Cloudflare Worker
 bun run dev              # Dev server (localhost:5173)
 bun run build            # Build (vite build) + typecheck (tsc --noEmit)
 bun run deploy           # Build + deploy to Cloudflare Workers
+bun run preview          # Vite preview
 bun run lint             # Biome lint
 bun run format           # Biome format (auto-fix)
 bun run format:check     # Biome check (no write)
 bun run typecheck        # TypeScript only
 bun run typegen          # Generate Cloudflare types
-bun run preview          # Vite preview
+bun run update:deps      # npm-check-updates UI
 # No tests configured
 ```
 
@@ -68,7 +74,7 @@ app/
 | Live timestamps | `app/components/post/Post.tsx` `useRelativeTime` | Colocated hook, 60s interval |
 | CSS variables | `app/styles/colors.css` | `--background`, `--primary`, `--secondary` |
 | Router config | `app/router.tsx` | `defaultPreload: false` (prevents API spam) |
-| Build pipeline | `vite.config.ts` | 5 plugins: tsConfigPaths → cloudflare → tanstackStart → viteReact → swManifest |
+| Build pipeline | `vite.config.ts` | Native `resolve.tsconfigPaths`, then cloudflare → tanstackStart → viteReact → swManifest |
 | NProgress bar | `app/routes/__root.tsx` | Tied to `routerState.status === "pending"` |
 
 ## Data Architecture
@@ -124,6 +130,7 @@ if (res.status !== 200) throw new Error(`Status ${res.status}`);
 - Strict mode, no `any`, no `!`, no `as Type`
 - `verbatimModuleSyntax` — use `import type { X }` for types
 - Path alias: `~/` → `./app/`
+- Do not add `baseUrl`; TypeScript 6 deprecates it. Keep `paths` relative to `tsconfig.json` and let Vite use `resolve.tsconfigPaths: true`.
 - Target: ES2022, module: ES2022, moduleResolution: bundler
 
 ### React Components
@@ -230,7 +237,7 @@ Always include reason after colon. Only used for `noArrayIndexKey` (static lists
 ## Build Pipeline
 
 Vite plugins in order:
-1. `tsConfigPaths()` — Resolves `~/` path alias
+1. `resolve.tsconfigPaths: true` — Resolves `~/` path alias natively in Vite 8
 2. `cloudflare()` — SSR environment for Workers
 3. `tanstackStart()` — File-based routing + route tree generation
 4. `viteReact()` — JSX transformation
@@ -245,6 +252,7 @@ Output: `dist/client/` (browser assets) + `dist/server/` (Workers entry)
 | @tanstack/react-router | File-based routing |
 | @tanstack/react-start | SSR framework |
 | @cloudflare/vite-plugin | Workers SSR environment |
+| @vitejs/plugin-react | React transform |
 | lru-cache | Client-side caching (4 separate instances) |
 | date-fns | Relative time formatting |
 | radash | Utilities (capitalize) |
