@@ -232,7 +232,7 @@ Always include reason after colon. Only used for `noArrayIndexKey` (static lists
 - Config: `wrangler.toml` (6 lines, minimal)
 - `nodejs_compat` flag required for Node.js APIs (`crypto`, `fs`, `path` in build)
 - SSR entry: `@tanstack/react-start/server-entry`
-- `compatibility_date`: 2026-01-14
+- `compatibility_date`: 2026-10-19
 
 ## Build Pipeline
 
