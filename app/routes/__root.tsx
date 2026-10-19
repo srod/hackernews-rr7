@@ -1,5 +1,6 @@
 import {
     createRootRoute,
+    type ErrorComponentProps,
     HeadContent,
     Outlet,
     Scripts,
@@ -70,8 +71,9 @@ function RootComponent() {
     );
 }
 
-function RootErrorComponent({ error }: { error: Error }) {
+function RootErrorComponent({ error }: ErrorComponentProps) {
     const isDev = process.env.NODE_ENV === "development";
+    const err = error instanceof Error ? error : new Error(String(error));
 
     return (
         <html lang="en">
@@ -82,10 +84,10 @@ function RootErrorComponent({ error }: { error: Error }) {
             <body>
                 <main className="pt-16 p-4 container mx-auto">
                     <h1>Error</h1>
-                    <p>{error.message}</p>
-                    {isDev && error.stack && (
+                    <p>{err.message}</p>
+                    {isDev && err.stack && (
                         <pre className="w-full p-4 overflow-x-auto">
-                            <code>{error.stack}</code>
+                            <code>{err.stack}</code>
                         </pre>
                     )}
                 </main>
