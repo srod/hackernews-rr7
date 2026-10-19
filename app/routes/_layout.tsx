@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, useRouter } from "@tanstack/react-router";
 import { Header } from "~/components/Header";
+import { NotFound } from "~/components/NotFound";
 import { useOnlineStatus } from "~/hooks/useOnlineStatus";
 import styles from "./_layout.module.css";
 
@@ -8,10 +9,6 @@ export const Route = createFileRoute("/_layout")({
     notFoundComponent: NotFound,
     errorComponent: ErrorComponent,
 });
-
-function NotFound() {
-    return <p className={styles.notFound}>Page not found</p>;
-}
 
 function ErrorComponent() {
     const isOnline = useOnlineStatus();

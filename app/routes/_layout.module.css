@@ -4,12 +4,6 @@
     padding: 0 35px 35px 35px;
 }
 
-.notFound {
-    color: var(--color-text-secondary);
-    text-align: center;
-    padding: 2rem 0;
-}
-
 .error {
     text-align: center;
     padding: 2rem 0;

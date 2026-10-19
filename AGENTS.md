@@ -49,6 +49,7 @@ app/
 │   ├── Header.tsx       # Navigation (exports `items` array for route validation)
 │   ├── Skeleton.tsx     # Loading states (Post, Comment, User variants)
 │   ├── OfflineBanner.tsx
+│   ├── NotFound.tsx     # Shared 404 (layout + $type loader notFound())
 │   └── UpdateToast.tsx
 ├── hooks/               # useOnlineStatus, useIntersectionObserver, useServiceWorker
 ├── lib/                 # fetch-data (concurrency), fetch-comments, visited-posts

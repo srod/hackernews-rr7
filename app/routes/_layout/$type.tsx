@@ -1,8 +1,9 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, notFound, useRouter } from "@tanstack/react-router";
 import { LRUCache } from "lru-cache";
 import { capitalize } from "radash";
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import { items } from "~/components/Header";
+import { NotFound } from "~/components/NotFound";
 import { PostItem } from "~/components/post/Post";
 import { PostListSkeleton } from "~/components/Skeleton";
 import { useIntersectionObserver } from "~/hooks/useIntersectionObserver";
@@ -25,7 +26,7 @@ function isValidType(type: string): type is PostTypes {
 export const Route = createFileRoute("/_layout/$type")({
     loader: async ({ params }) => {
         if (!isValidType(params.type)) {
-            return { type: "top" as const, storyIds: [] };
+            throw notFound();
         }
         const type = params.type;
 
@@ -40,11 +41,15 @@ export const Route = createFileRoute("/_layout/$type")({
     staleTime: 30_000,
     head: ({ loaderData }) => ({
         meta: [
-            { title: `Hacker News: ${capitalize(loaderData?.type ?? "top")}` },
+            {
+                title: `Hacker News: ${capitalize(loaderData?.type ?? "not found")}`,
+            },
         ],
     }),
     component: TypeComponent,
     pendingComponent: PostListSkeleton,
+    // Loader notFound() replaces the layout unless caught here, inside its Outlet.
+    notFoundComponent: NotFound,
 });
 
 async function fetchPosts(ids: string[]): Promise<Post[]> {
