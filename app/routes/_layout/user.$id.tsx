@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, notFound } from "@tanstack/react-router";
 import { LRUCache } from "lru-cache";
 import { useCallback, useReducer, useRef } from "react";
+import { NotFound } from "~/components/NotFound";
 import { CommentItem } from "~/components/post/Comment";
 import { PostItem } from "~/components/post/Post";
 import {
@@ -77,7 +78,10 @@ export const Route = createFileRoute("/_layout/user/$id")({
         let user = userCache.get(cacheKey);
 
         if (!user) {
-            user = await fetchData<User>(`user/${id}`);
+            // HN API answers 200 + null for unknown users
+            const fetched = await fetchData<User | null>(`user/${id}`);
+            if (!fetched) throw notFound();
+            user = fetched;
             userCache.set(cacheKey, user);
         }
 
@@ -85,9 +89,10 @@ export const Route = createFileRoute("/_layout/user/$id")({
     },
     staleTime: 30_000,
     head: ({ loaderData }) => ({
-        meta: [{ title: `Hacker News: ${loaderData?.user?.id}` }],
+        meta: [{ title: `Hacker News: ${loaderData?.user.id ?? "Not found"}` }],
     }),
     component: UserComponent,
+    notFoundComponent: NotFound,
     pendingComponent: UserSkeleton,
 });
 
@@ -122,7 +127,7 @@ function UserComponent() {
     const loadingSubmissionsRef = useRef(false);
     const loadingCommentsRef = useRef(false);
 
-    const submitted = user?.submitted ?? [];
+    const submitted = user.submitted ?? [];
 
     const loadSubmissions = useCallback(async () => {
         if (!isOnline || loadingSubmissionsRef.current || submissionsDone)
@@ -237,10 +242,6 @@ function UserComponent() {
             !loadingCommentsRef.current &&
             !commentsDone,
     });
-
-    if (!user) {
-        return <div>User not found</div>;
-    }
 
     return (
         <div>

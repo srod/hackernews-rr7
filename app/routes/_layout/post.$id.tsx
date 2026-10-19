@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, notFound } from "@tanstack/react-router";
 import { LRUCache } from "lru-cache";
 import { useCallback, useEffect, useReducer } from "react";
+import { NotFound } from "~/components/NotFound";
 import { CommentsList } from "~/components/post/Comments";
 import { PostItem } from "~/components/post/Post";
 import { CommentListSkeleton, PostSkeleton } from "~/components/Skeleton";
@@ -24,7 +25,10 @@ export const Route = createFileRoute("/_layout/post/$id")({
         let post = postCache.get(postCacheKey);
 
         if (!post) {
-            post = await fetchData<Post>(`item/${id}`);
+            // HN API answers 200 + null for unknown ids
+            const fetched = await fetchData<Post | null>(`item/${id}`);
+            if (!fetched) throw notFound();
+            post = fetched;
             postCache.set(postCacheKey, post);
         }
 
@@ -32,9 +36,14 @@ export const Route = createFileRoute("/_layout/post/$id")({
     },
     staleTime: 30_000,
     head: ({ loaderData }) => ({
-        meta: [{ title: `Hacker News: ${loaderData?.post?.title}` }],
+        meta: [
+            {
+                title: `Hacker News: ${loaderData?.post.title ?? "Not found"}`,
+            },
+        ],
     }),
     component: PostComponent,
+    notFoundComponent: NotFound,
     pendingComponent: () => (
         <>
             <PostSkeleton />
@@ -104,16 +113,15 @@ function PostComponent() {
     });
     const { comments, loading, loadingMore, loadedCount } = state;
 
-    const allKids = post?.kids ?? [];
+    const allKids = post.kids ?? [];
     const hasMore = loadedCount < allKids.length;
 
     useEffect(() => {
-        if (!post) return;
         markPostVisited(post.id, post.descendants ?? 0);
     }, [post]);
 
     useEffect(() => {
-        if (!post?.kids) {
+        if (!post.kids) {
             dispatch({ type: "NO_KIDS" });
             return;
         }
@@ -132,7 +140,7 @@ function PostComponent() {
                 })
             )
             .catch(() => dispatch({ type: "NO_KIDS" }));
-    }, [post?.kids]);
+    }, [post.kids]);
 
     const loadMore = useCallback(() => {
         if (!isOnline || loadingMore || !hasMore) return;
@@ -149,8 +157,6 @@ function PostComponent() {
             )
             .catch(() => dispatch({ type: "LOAD_MORE_ERROR" }));
     }, [isOnline, allKids, loadedCount, loadingMore, hasMore]);
-
-    if (!post) return <div>Post not found</div>;
 
     return (
         <>
