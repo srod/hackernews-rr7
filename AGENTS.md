@@ -12,7 +12,7 @@ HackerNews clone with TanStack Start and TanStack Router, SSR on Cloudflare Work
 
 ## Requirements
 
-- Node.js 24 (`.node-version`, `package.json` engines)
+- Node.js 26 (`.node-version`, `package.json` engines)
 - Bun
 
 ## Commands

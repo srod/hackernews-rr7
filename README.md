@@ -23,7 +23,7 @@ A fast Hacker News client built with TanStack Start, React 19, and Cloudflare Wo
 
 ## Requirements
 
-- Node.js 24
+- Node.js 26
 - Bun
 
 ## Getting Started
