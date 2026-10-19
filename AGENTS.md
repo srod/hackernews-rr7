@@ -8,7 +8,7 @@
 
 HackerNews clone with TanStack Start and TanStack Router, SSR on Cloudflare Workers. Features infinite scroll, LRU caching, PWA offline support, auto-refresh on focus.
 
-**Stack**: React 19, TanStack Router, Vite 8, TypeScript 6 (strict), Biome, Cloudflare Workers
+**Stack**: React 19, TanStack Router, Vite 8, TypeScript 7 (strict, native `tsc`), Biome, Cloudflare Workers
 
 ## Requirements
 
@@ -131,7 +131,7 @@ if (res.status !== 200) throw new Error(`Status ${res.status}`);
 - Strict mode, no `any`, no `!`, no `as Type`
 - `verbatimModuleSyntax` — use `import type { X }` for types
 - Path alias: `~/` → `./app/`
-- Do not add `baseUrl`; TypeScript 6 deprecates it. Keep `paths` relative to `tsconfig.json` and let Vite use `resolve.tsconfigPaths: true`.
+- Do not add `baseUrl`; it is removed in TypeScript 7. Keep `paths` relative to `tsconfig.json` and let Vite use `resolve.tsconfigPaths: true`.
 - Target: ES2022, module: ES2022, moduleResolution: bundler
 
 ### React Components

@@ -17,7 +17,7 @@ A fast Hacker News client built with TanStack Start, React 19, and Cloudflare Wo
 - **UI**: React 19
 - **Runtime**: Cloudflare Workers
 - **Build**: Vite 8
-- **Language**: TypeScript 6 in strict mode
+- **Language**: TypeScript 7 in strict mode
 - **Styling**: CSS Modules
 - **Tooling**: Bun, Biome, Wrangler
 
